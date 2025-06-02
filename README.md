@@ -4,11 +4,12 @@ A Gradio-based web application for generating images using Latent Consistency Mo
 
 ## Features
 
-- 🎨 High-quality image generation using four LCM methods:
+- 🎨 High-quality image generation using five LCM methods:
   - LCM-SDXL: Full model fine-tuning approach
   - LCM-LoRA: Lightweight LoRA adapter approach
   - LCM Image-to-Image: Transform existing images with LCM
   - LCM-LoRA Image-to-Image: Transform existing images with LCM-LoRA
+  - LCM-LoRA Inpainting: Edit specific areas of images with LCM-LoRA
 - ⚡ Fast inference with minimal steps (4 steps by default)
 - 🔄 Automatic device detection (GPU/CPU)
 - 🎯 Adjustable parameters:
@@ -54,21 +55,24 @@ python lcm_gradio_app.py
 
 2. Open your web browser and navigate to `http://localhost:7860`
 
-3. Choose between LCM-SDXL, LCM-LoRA, LCM Image-to-Image, or LCM-LoRA Image-to-Image tabs:
+3. Choose between LCM-SDXL, LCM-LoRA, LCM Image-to-Image, LCM-LoRA Image-to-Image, or LCM-LoRA Inpainting tabs:
    - **LCM-SDXL**: Uses the full fine-tuned model (default guidance scale: 8.0)
    - **LCM-LoRA**: Uses the lightweight LoRA adapter (default guidance scale: 1.0)
    - **LCM Image-to-Image**: Transform existing images (default guidance scale: 7.5)
    - **LCM-LoRA Image-to-Image**: Transform existing images with LoRA (default guidance scale: 1.0)
+   - **LCM-LoRA Inpainting**: Edit specific areas of images (default guidance scale: 4.0)
 
 4. Enter your prompt and adjust the parameters:
    - **Prompt**: Describe the image you want to generate
-   - **Initial Image**: Upload an image to transform (for image-to-image tabs)
+   - **Initial Image**: Upload an image to transform (for image-to-image and inpainting tabs)
+   - **Mask Image**: Upload a mask image for inpainting (white areas will be edited)
    - **Number of Steps**: Control the number of inference steps (1-10)
    - **Guidance Scale**: Adjust the influence of the prompt
      - LCM-SDXL: 1.0-20.0 (default: 8.0)
      - LCM-LoRA: 1.0-20.0 (default: 1.0)
      - LCM Image-to-Image: 1.0-20.0 (default: 7.5)
      - LCM-LoRA Image-to-Image: 1.0-20.0 (default: 1.0)
+     - LCM-LoRA Inpainting: 1.0-20.0 (default: 4.0)
    - **Strength**: Control how much to transform the initial image (0.0-1.0, image-to-image only)
      - LCM Image-to-Image: 0.0-1.0 (default: 0.5)
      - LCM-LoRA Image-to-Image: 0.0-1.0 (default: 0.6)
@@ -82,6 +86,7 @@ python lcm_gradio_app.py
 - "A serene landscape with mountains and a lake at sunset, photorealistic"
 - "A futuristic cityscape with flying cars and neon lights, cinematic"
 - "Astronauts in a jungle, cold color palette, muted colors, detailed, 8k" (for image-to-image)
+- "concept art digital painting of an elven castle, inspired by lord of the rings, highly detailed, 8k" (for inpainting)
 
 ## Notes
 
@@ -94,10 +99,15 @@ python lcm_gradio_app.py
   - LCM-LoRA works best with lower guidance scales (1.0-2.0)
   - LCM Image-to-Image works best with moderate guidance scales (7.0-8.0)
   - LCM-LoRA Image-to-Image works best with lower guidance scales (1.0-2.0)
+  - LCM-LoRA Inpainting works best with moderate guidance scales (4.0-6.0)
 - For image-to-image:
   - Lower strength values (0.3-0.5) preserve more of the original image
   - Higher strength values (0.7-0.9) allow for more dramatic transformations
   - LCM-LoRA Image-to-Image typically works better with slightly higher strength values (0.6-0.8)
+- For inpainting:
+  - Use white areas in the mask to indicate regions to be edited
+  - Black areas in the mask will remain unchanged
+  - The mask should be the same size as the input image
 
 ## License
 
@@ -111,4 +121,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [LCM-LoRA SDv1.5](https://huggingface.co/latent-consistency/lcm-lora-sdv1-5)
 - [LCM Dreamshaper](https://huggingface.co/SimianLuo/LCM_Dreamshaper_v7)
 - [Dreamshaper](https://huggingface.co/Lykon/dreamshaper-7)
+- [Stable Diffusion Inpainting](https://huggingface.co/runwayml/stable-diffusion-inpainting)
 - [Gradio](https://gradio.app/) 

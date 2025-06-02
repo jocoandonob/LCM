@@ -5,7 +5,8 @@ from diffusers import (
     UNet2DConditionModel,
     LCMScheduler,
     DiffusionPipeline,
-    AutoPipelineForImage2Image
+    AutoPipelineForImage2Image,
+    AutoPipelineForInpainting
 )
 from diffusers.utils import load_image
 
@@ -135,6 +136,37 @@ def generate_image2image_lcm_lora(prompt, init_image, num_steps=4, guidance_scal
         num_inference_steps=num_steps,
         guidance_scale=guidance_scale,
         strength=strength,
+        generator=generator
+    ).images[0]
+    
+    return image
+
+def generate_inpainting_lcm_lora(prompt, init_image, mask_image, num_steps=4, guidance_scale=4.0, seed=0):
+    device = get_device()
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    
+    # Load pipeline
+    pipe = AutoPipelineForInpainting.from_pretrained(
+        "runwayml/stable-diffusion-inpainting",
+        torch_dtype=dtype,
+        variant="fp16" if device == "cuda" else None,
+        # use_safetensors=True
+    ).to(device)
+    
+    # Set scheduler
+    pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    
+    # Load LoRA weights
+    pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
+    
+    # Generate image
+    generator = torch.manual_seed(seed)
+    image = pipe(
+        prompt=prompt,
+        image=init_image,
+        mask_image=mask_image,
+        num_inference_steps=num_steps,
+        guidance_scale=guidance_scale,
         generator=generator
     ).images[0]
     
@@ -336,6 +368,60 @@ with gr.Blocks(title="LCM Text-to-Image Generator") as demo:
                     seed_img2img_lora
                 ],
                 outputs=output_image_img2img_lora
+            )
+        
+        with gr.TabItem("LCM-LoRA Inpainting"):
+            with gr.Row():
+                with gr.Column():
+                    prompt_inpaint = gr.Textbox(
+                        label="Prompt",
+                        placeholder="Enter your prompt here...",
+                        lines=3
+                    )
+                    init_image_inpaint = gr.Image(
+                        label="Initial Image",
+                        type="pil"
+                    )
+                    mask_image_inpaint = gr.Image(
+                        label="Mask Image",
+                        type="pil"
+                    )
+                    with gr.Row():
+                        num_steps_inpaint = gr.Slider(
+                            minimum=1,
+                            maximum=10,
+                            value=4,
+                            step=1,
+                            label="Number of Steps"
+                        )
+                        guidance_scale_inpaint = gr.Slider(
+                            minimum=1.0,
+                            maximum=20.0,
+                            value=4.0,
+                            step=0.5,
+                            label="Guidance Scale"
+                        )
+                    seed_inpaint = gr.Number(
+                        value=0,
+                        label="Seed",
+                        precision=0
+                    )
+                    generate_btn_inpaint = gr.Button("Generate Image")
+                
+                with gr.Column():
+                    output_image_inpaint = gr.Image(label="Generated Image")
+            
+            generate_btn_inpaint.click(
+                fn=generate_inpainting_lcm_lora,
+                inputs=[
+                    prompt_inpaint,
+                    init_image_inpaint,
+                    mask_image_inpaint,
+                    num_steps_inpaint,
+                    guidance_scale_inpaint,
+                    seed_inpaint
+                ],
+                outputs=output_image_inpaint
             )
 
 if __name__ == "__main__":
