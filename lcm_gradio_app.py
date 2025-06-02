@@ -208,6 +208,38 @@ def generate_inpainting_lcm_lora(prompt, init_image, mask_image, num_steps=4, gu
     
     return image
 
+def generate_image_multi_lora(prompt, num_steps=4, guidance_scale=1.0, seed=0):
+    device = get_device()
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    
+    # Load pipeline
+    pipe = DiffusionPipeline.from_pretrained(
+        "stabilityai/stable-diffusion-xl-base-1.0",
+        variant="fp16" if device == "cuda" else None,
+        torch_dtype=dtype
+    ).to(device)
+    
+    # Set scheduler
+    pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    
+    # Load multiple LoRA weights
+    pipe.load_lora_weights("latent-consistency/lcm-lora-sdxl", adapter_name="lcm")
+    pipe.load_lora_weights("TheLastBen/Papercut_SDXL", weight_name="papercut.safetensors", adapter_name="papercut")
+    
+    # Set adapter weights
+    pipe.set_adapters(["lcm", "papercut"], adapter_weights=[1.0, 0.8])
+    
+    # Generate image
+    generator = torch.manual_seed(seed)
+    image = pipe(
+        prompt=prompt,
+        num_inference_steps=num_steps,
+        generator=generator,
+        guidance_scale=guidance_scale
+    ).images[0]
+    
+    return image
+
 # Create Gradio interface
 with gr.Blocks(title="LCM Text-to-Image Generator") as demo:
     gr.Markdown("# LCM Text-to-Image Generator")
@@ -502,6 +534,50 @@ with gr.Blocks(title="LCM Text-to-Image Generator") as demo:
                     seed_inpaint
                 ],
                 outputs=output_image_inpaint
+            )
+        
+        with gr.TabItem("Multi-LoRA"):
+            with gr.Row():
+                with gr.Column():
+                    prompt_multi_lora = gr.Textbox(
+                        label="Prompt",
+                        placeholder="Enter your prompt here...",
+                        lines=3
+                    )
+                    with gr.Row():
+                        num_steps_multi_lora = gr.Slider(
+                            minimum=1,
+                            maximum=10,
+                            value=4,
+                            step=1,
+                            label="Number of Steps"
+                        )
+                        guidance_scale_multi_lora = gr.Slider(
+                            minimum=1.0,
+                            maximum=20.0,
+                            value=1.0,
+                            step=0.5,
+                            label="Guidance Scale"
+                        )
+                    seed_multi_lora = gr.Number(
+                        value=0,
+                        label="Seed",
+                        precision=0
+                    )
+                    generate_btn_multi_lora = gr.Button("Generate Image")
+                
+                with gr.Column():
+                    output_image_multi_lora = gr.Image(label="Generated Image")
+            
+            generate_btn_multi_lora.click(
+                fn=generate_image_multi_lora,
+                inputs=[
+                    prompt_multi_lora,
+                    num_steps_multi_lora,
+                    guidance_scale_multi_lora,
+                    seed_multi_lora
+                ],
+                outputs=output_image_multi_lora
             )
 
 if __name__ == "__main__":
