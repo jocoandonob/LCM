@@ -110,6 +110,36 @@ def generate_image2image_lcm(prompt, init_image, num_steps=4, guidance_scale=7.5
     
     return image
 
+def generate_image2image_lcm_lora(prompt, init_image, num_steps=4, guidance_scale=1.0, strength=0.6, seed=0):
+    device = get_device()
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    
+    # Load pipeline
+    pipe = AutoPipelineForImage2Image.from_pretrained(
+        "Lykon/dreamshaper-7",
+        torch_dtype=dtype,
+        variant="fp16" if device == "cuda" else None,
+    ).to(device)
+    
+    # Set scheduler
+    pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    
+    # Load LoRA weights
+    pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
+    
+    # Generate image
+    generator = torch.manual_seed(seed)
+    image = pipe(
+        prompt=prompt,
+        image=init_image,
+        num_inference_steps=num_steps,
+        guidance_scale=guidance_scale,
+        strength=strength,
+        generator=generator
+    ).images[0]
+    
+    return image
+
 # Create Gradio interface
 with gr.Blocks(title="LCM Text-to-Image Generator") as demo:
     gr.Markdown("# LCM Text-to-Image Generator")
@@ -249,6 +279,63 @@ with gr.Blocks(title="LCM Text-to-Image Generator") as demo:
                     seed_img2img
                 ],
                 outputs=output_image_img2img
+            )
+        
+        with gr.TabItem("LCM-LoRA Image-to-Image"):
+            with gr.Row():
+                with gr.Column():
+                    prompt_img2img_lora = gr.Textbox(
+                        label="Prompt",
+                        placeholder="Enter your prompt here...",
+                        lines=3
+                    )
+                    init_image_lora = gr.Image(
+                        label="Initial Image",
+                        type="pil"
+                    )
+                    with gr.Row():
+                        num_steps_img2img_lora = gr.Slider(
+                            minimum=1,
+                            maximum=10,
+                            value=4,
+                            step=1,
+                            label="Number of Steps"
+                        )
+                        guidance_scale_img2img_lora = gr.Slider(
+                            minimum=1.0,
+                            maximum=20.0,
+                            value=1.0,
+                            step=0.5,
+                            label="Guidance Scale"
+                        )
+                    strength_lora = gr.Slider(
+                        minimum=0.0,
+                        maximum=1.0,
+                        value=0.6,
+                        step=0.05,
+                        label="Strength"
+                    )
+                    seed_img2img_lora = gr.Number(
+                        value=0,
+                        label="Seed",
+                        precision=0
+                    )
+                    generate_btn_img2img_lora = gr.Button("Generate Image")
+                
+                with gr.Column():
+                    output_image_img2img_lora = gr.Image(label="Generated Image")
+            
+            generate_btn_img2img_lora.click(
+                fn=generate_image2image_lcm_lora,
+                inputs=[
+                    prompt_img2img_lora,
+                    init_image_lora,
+                    num_steps_img2img_lora,
+                    guidance_scale_img2img_lora,
+                    strength_lora,
+                    seed_img2img_lora
+                ],
+                outputs=output_image_img2img_lora
             )
 
 if __name__ == "__main__":

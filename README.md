@@ -4,10 +4,11 @@ A Gradio-based web application for generating images using Latent Consistency Mo
 
 ## Features
 
-- 🎨 High-quality image generation using three LCM methods:
+- 🎨 High-quality image generation using four LCM methods:
   - LCM-SDXL: Full model fine-tuning approach
   - LCM-LoRA: Lightweight LoRA adapter approach
   - LCM Image-to-Image: Transform existing images with LCM
+  - LCM-LoRA Image-to-Image: Transform existing images with LCM-LoRA
 - ⚡ Fast inference with minimal steps (4 steps by default)
 - 🔄 Automatic device detection (GPU/CPU)
 - 🎯 Adjustable parameters:
@@ -53,20 +54,24 @@ python lcm_gradio_app.py
 
 2. Open your web browser and navigate to `http://localhost:7860`
 
-3. Choose between LCM-SDXL, LCM-LoRA, or LCM Image-to-Image tabs:
+3. Choose between LCM-SDXL, LCM-LoRA, LCM Image-to-Image, or LCM-LoRA Image-to-Image tabs:
    - **LCM-SDXL**: Uses the full fine-tuned model (default guidance scale: 8.0)
    - **LCM-LoRA**: Uses the lightweight LoRA adapter (default guidance scale: 1.0)
    - **LCM Image-to-Image**: Transform existing images (default guidance scale: 7.5)
+   - **LCM-LoRA Image-to-Image**: Transform existing images with LoRA (default guidance scale: 1.0)
 
 4. Enter your prompt and adjust the parameters:
    - **Prompt**: Describe the image you want to generate
-   - **Initial Image**: Upload an image to transform (for image-to-image only)
+   - **Initial Image**: Upload an image to transform (for image-to-image tabs)
    - **Number of Steps**: Control the number of inference steps (1-10)
    - **Guidance Scale**: Adjust the influence of the prompt
      - LCM-SDXL: 1.0-20.0 (default: 8.0)
      - LCM-LoRA: 1.0-20.0 (default: 1.0)
      - LCM Image-to-Image: 1.0-20.0 (default: 7.5)
+     - LCM-LoRA Image-to-Image: 1.0-20.0 (default: 1.0)
    - **Strength**: Control how much to transform the initial image (0.0-1.0, image-to-image only)
+     - LCM Image-to-Image: 0.0-1.0 (default: 0.5)
+     - LCM-LoRA Image-to-Image: 0.0-1.0 (default: 0.6)
    - **Seed**: Set a random seed for reproducible results
 
 5. Click "Generate Image" to create your image
@@ -88,9 +93,11 @@ python lcm_gradio_app.py
   - LCM-SDXL works best with higher guidance scales (8.0-12.0)
   - LCM-LoRA works best with lower guidance scales (1.0-2.0)
   - LCM Image-to-Image works best with moderate guidance scales (7.0-8.0)
+  - LCM-LoRA Image-to-Image works best with lower guidance scales (1.0-2.0)
 - For image-to-image:
   - Lower strength values (0.3-0.5) preserve more of the original image
   - Higher strength values (0.7-0.9) allow for more dramatic transformations
+  - LCM-LoRA Image-to-Image typically works better with slightly higher strength values (0.6-0.8)
 
 ## License
 
@@ -101,6 +108,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Stable Diffusion XL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)
 - [Latent Consistency Models](https://huggingface.co/latent-consistency/lcm-sdxl)
 - [LCM-LoRA](https://huggingface.co/latent-consistency/lcm-lora-sdxl)
+- [LCM-LoRA SDv1.5](https://huggingface.co/latent-consistency/lcm-lora-sdv1-5)
 - [LCM Dreamshaper](https://huggingface.co/SimianLuo/LCM_Dreamshaper_v7)
 - [Dreamshaper](https://huggingface.co/Lykon/dreamshaper-7)
 - [Gradio](https://gradio.app/) 
