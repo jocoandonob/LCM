@@ -1,5 +1,7 @@
 # LCM Text-to-Image Generator
 
+![LCM Text-to-Image Generator](thumbnail.png)
+
 A Gradio-based web application for generating images using Latent Consistency Models (LCM) with Stable Diffusion XL. This implementation automatically detects and utilizes GPU if available, falling back to CPU if necessary.
 
 ## Features
