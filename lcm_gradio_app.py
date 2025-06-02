@@ -76,6 +76,42 @@ def generate_image_lcm_lora(prompt, num_steps=4, guidance_scale=1.0, seed=0):
     
     return image
 
+def generate_image_custom_lora(prompt, num_steps=4, guidance_scale=8.0, seed=0):
+    device = get_device()
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    
+    # Load UNet
+    unet = UNet2DConditionModel.from_pretrained(
+        "latent-consistency/lcm-sdxl",
+        torch_dtype=dtype,
+        variant="fp16" if device == "cuda" else None,
+    )
+    
+    # Load pipeline
+    pipe = StableDiffusionXLPipeline.from_pretrained(
+        "stabilityai/stable-diffusion-xl-base-1.0",
+        unet=unet,
+        torch_dtype=dtype,
+        variant="fp16" if device == "cuda" else None,
+    ).to(device)
+    
+    # Set scheduler
+    pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    
+    # Load custom LoRA weights with static parameters
+    pipe.load_lora_weights("TheLastBen/Papercut_SDXL", weight_name="papercut.safetensors", adapter_name="papercut")
+    
+    # Generate image
+    generator = torch.manual_seed(seed)
+    image = pipe(
+        prompt=prompt,
+        num_inference_steps=num_steps,
+        generator=generator,
+        guidance_scale=guidance_scale
+    ).images[0]
+    
+    return image
+
 def generate_image2image_lcm(prompt, init_image, num_steps=4, guidance_scale=7.5, strength=0.5, seed=0):
     device = get_device()
     dtype = torch.float16 if device == "cuda" else torch.float32
@@ -254,6 +290,50 @@ with gr.Blocks(title="LCM Text-to-Image Generator") as demo:
                 fn=generate_image_lcm_lora,
                 inputs=[prompt_lora, num_steps_lora, guidance_scale_lora, seed_lora],
                 outputs=output_image_lora
+            )
+        
+        with gr.TabItem("Custom LoRA"):
+            with gr.Row():
+                with gr.Column():
+                    prompt_custom_lora = gr.Textbox(
+                        label="Prompt",
+                        placeholder="Enter your prompt here...",
+                        lines=3
+                    )
+                    with gr.Row():
+                        num_steps_custom_lora = gr.Slider(
+                            minimum=1,
+                            maximum=10,
+                            value=4,
+                            step=1,
+                            label="Number of Steps"
+                        )
+                        guidance_scale_custom_lora = gr.Slider(
+                            minimum=1.0,
+                            maximum=20.0,
+                            value=8.0,
+                            step=0.5,
+                            label="Guidance Scale"
+                        )
+                    seed_custom_lora = gr.Number(
+                        value=0,
+                        label="Seed",
+                        precision=0
+                    )
+                    generate_btn_custom_lora = gr.Button("Generate Image")
+                
+                with gr.Column():
+                    output_image_custom_lora = gr.Image(label="Generated Image")
+            
+            generate_btn_custom_lora.click(
+                fn=generate_image_custom_lora,
+                inputs=[
+                    prompt_custom_lora,
+                    num_steps_custom_lora,
+                    guidance_scale_custom_lora,
+                    seed_custom_lora
+                ],
+                outputs=output_image_custom_lora
             )
         
         with gr.TabItem("LCM Image-to-Image"):
